@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Diet Journey Tracker v3</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--soft:#f3f4f6;--good:#166534;--bad:#991b1b}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.app{max-width:820px;margin:auto;padding:14px 14px 90px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:5px 0 14px}
+h1{font-size:24px;margin:0}.small{font-size:12px;color:var(--muted)}.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin:12px 0;box-shadow:0 3px 14px rgba(0,0,0,.035)}
+.card h2{font-size:17px;margin:0 0 10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:var(--soft);border-radius:14px;padding:12px}.metric b{font-size:20px;display:block}.metric span{font-size:11px;color:var(--muted)}
+label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}input,select,textarea,button{font:inherit;width:100%}
+input,select,textarea{border:1px solid var(--line);border-radius:11px;padding:10px 11px;background:#fff;color:var(--text)}textarea{min-height:74px;resize:vertical}
+button{border:0;border-radius:11px;padding:11px 12px;background:var(--accent);color:#fff;font-weight:700}button.secondary{background:#fff;color:var(--text);border:1px solid var(--line)}
+button.danger{background:#fff;color:var(--bad);border:1px solid #fecaca}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.progress{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden}.bar{height:100%;background:var(--accent)}
+.pill{display:inline-block;padding:5px 8px;border-radius:999px;background:var(--soft);font-size:12px}.cycle{padding:12px;border-radius:14px;background:var(--soft);margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:left}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#fffffff2;border-top:1px solid var(--line);display:flex;justify-content:center}
+.tabs .inner{width:min(820px,100%);display:grid;grid-template-columns:repeat(5,1fr);padding:7px 8px calc(7px + env(safe-area-inset-bottom))}
+.tabbtn{background:transparent;color:var(--muted);padding:7px 3px;font-size:11px}.tabbtn.active{background:var(--soft);color:var(--text)}
+section{display:none}section.active{display:block}@media(max-width:600px){.grid3{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="app">
+<header><div><h1>Diet Journey Tracker</h1><div class="small">Working-student · Night-shift edition · v3</div></div><span class="pill" id="streak">0-day streak</span></header>
+
+<section id="home" class="active">
+<div class="card"><h2>My tracking day</h2><div class="cycle" id="cycleStatus"></div>
+<div class="row"><button id="startBtn" onclick="startDay()">Start My Day</button><button id="endBtn" class="secondary" onclick="endDay()">End My Day</button></div>
+<p class="small">Start when you wake up. Midnight will not split your work shift. End your day before you sleep.</p></div>
+<div class="card"><h2>Current cycle</h2><div class="grid3">
+<div class="metric"><b id="dWeight">—</b><span>Latest weight</span></div><div class="metric"><b id="dWaist">—</b><span>Latest waist</span></div>
+<div class="metric"><b id="dProtein">—</b><span>Protein</span></div><div class="metric"><b id="dSteps">—</b><span>Steps</span></div>
+<div class="metric"><b id="dSleep">—</b><span>Sleep</span></div><div class="metric"><b id="dWater">—</b><span>Water</span></div></div></div>
+<div class="card"><h2>Daily goals</h2><div id="goals"></div></div>
+</section>
+
+<section id="log"><div class="card"><h2>Daily Check-in</h2><div class="grid2">
+<div><label>Tracking date</label><input id="date" type="date"></div><div><label>Day type</label><select id="dayType"><option>Work + Class</option><option>Work Only</option><option>Class Only</option><option>Day Off</option></select></div>
+<div><label>Weight (kg)</label><input id="weight" type="number" step=".1"></div><div><label>Waist (cm)</label><input id="waist" type="number" step=".1"></div>
+<div><label>Calories (optional)</label><input id="calories" type="number"></div><div><label>Protein (g)</label><input id="proteinG" type="number"></div>
+<div><label>Water (glasses)</label><input id="water" type="number"></div><div><label>Steps</label><input id="steps" type="number"></div>
+<div><label>Sleep (hours)</label><input id="sleep" type="number" step=".25"></div><div><label>Workout</label><select id="workout"><option>No</option><option>Walk only</option><option>Strength</option><option>Cardio</option><option>Strength + Cardio</option></select></div>
+</div><label>Meals / snacks</label><textarea id="meals"></textarea><label>Notes</label><textarea id="notes"></textarea><button onclick="saveEntry()">Save / Update Entry</button></div></section>
+
+<section id="progress"><div class="card"><h2>Progress history</h2><p class="small">Each tracking cycle stays together even if it crosses midnight.</p>
+<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Kg</th><th>Waist</th><th>Protein</th><th>Water</th><th>Steps</th><th>Sleep</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<button class="secondary" onclick="exportCSV()">Export CSV backup</button></div></section>
+
+<section id="schedule"><div class="card"><h2>Night-shift rhythm</h2><p class="muted">Wake → <b>Start My Day</b> → meals/classes/work → keep logging even after midnight → finish shift → final log → <b>End My Day</b> before sleeping.</p>
+<p class="small">Example: Start Sunday 4 PM → work 8 PM–5 AM Monday → End Monday 7 AM = one Sunday tracking cycle.</p></div></section>
+
+<section id="settings"><div class="card"><h2>Targets</h2><div class="grid2">
+<div><label>Goal weight (kg)</label><input id="goalWeight" type="number" step=".1"></div><div><label>Protein (g/day)</label><input id="goalProtein" type="number"></div>
+<div><label>Steps</label><input id="goalSteps" type="number"></div><div><label>Water (glasses)</label><input id="goalWater" type="number"></div>
+<div><label>Sleep (hours)</label><input id="goalSleep" type="number" step=".25"></div></div><button onclick="saveSettings()">Save targets</button></div>
+<div class="card"><h2>Data</h2><button class="secondary" onclick="exportCSV()">Export CSV backup</button><p class="small">Your existing v2 browser data is reused. Data remains stored on this browser/device.</p></div></section>
+</div>
+
+<nav class="tabs"><div class="inner">
+<button class="tabbtn active" onclick="tab('home',this)">Home</button><button class="tabbtn" onclick="tab('log',this)">Log</button>
+<button class="tabbtn" onclick="tab('progress',this)">Progress</button><button class="tabbtn" onclick="tab('schedule',this)">Schedule</button><button class="tabbtn" onclick="tab('settings',this)">Settings</button>
+</div></nav>
+
+<script>
+const KEY="dietJourneyTracker_v2",SETTINGS="dietJourneySettings_v2",CYCLE="dietJourneyCycle_v1";
+const defaults={goalWeight:70,goalProtein:130,goalSteps:7000,goalWater:8,goalSleep:7};
+function localDate(){let d=new Date(),o=d.getTimezoneOffset();return new Date(d-o*60000).toISOString().slice(0,10)}
+function entries(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return[]}}
+function put(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function cycle(){try{return JSON.parse(localStorage.getItem(CYCLE)||"null")}catch(e){return null}}
+function trackingDate(){let c=cycle();return c&&c.active?c.date:localDate()}
+function settings(){try{return {...defaults,...JSON.parse(localStorage.getItem(SETTINGS)||"{}")}}catch(e){return defaults}}
+function tab(id,b){document.querySelectorAll("section").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tabbtn").forEach(x=>x.classList.remove("active"));b.classList.add("active")}
+function startDay(){let c=cycle();if(c&&c.active){alert("Your tracking day is already active.");return}let d=localDate();localStorage.setItem(CYCLE,JSON.stringify({active:true,date:d,startedAt:new Date().toISOString()}));date.value=d;render();alert("Day started! Midnight will NOT reset this cycle.")}
+function endDay(){let c=cycle();if(!c||!c.active){alert("No active day.");return}if(!entries().some(e=>e.date===c.date)&&!confirm("No check-in saved yet. End this day anyway?"))return;localStorage.setItem(CYCLE,JSON.stringify({...c,active:false,endedAt:new Date().toISOString()}));render();alert("Day ended. Your history is saved.")}
+function saveEntry(){let d=trackingDate();let e={date:d,dayType:dayType.value,weight:weight.value,waist:waist.value,calories:calories.value,proteinG:proteinG.value,water:water.value,steps:steps.value,sleep:sleep.value,workout:workout.value,meals:meals.value,notes:notes.value};let a=entries(),i=a.findIndex(x=>x.date===d);if(i>=0)a[i]={...a[i],...e};else a.push(e);a.sort((x,y)=>x.date.localeCompare(y.date));put(a);render();alert("Entry saved to this tracking cycle.")}
+function saveSettings(){localStorage.setItem(SETTINGS,JSON.stringify({goalWeight:+goalWeight.value||70,goalProtein:+goalProtein.value||130,goalSteps:+goalSteps.value||7000,goalWater:+goalWater.value||8,goalSleep:+goalSleep.value||7}));render();alert("Targets saved.")}
+function goal(label,v,t,s=""){let p=Math.min(100,Math.max(0,(+v||0)/t*100));return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><span>${label}</span><span>${v||"—"}${s} / ${t}${s}</span></div><div class="progress"><div class="bar" style="width:${p}%"></div></div></div>`}
+function render(){
+ let a=entries(),c=cycle(),s=settings(),d=trackingDate(),e=a.find(x=>x.date===d),latest=[...a].reverse().find(x=>x.weight),lw=[...a].reverse().find(x=>x.waist);
+ date.value=d;date.disabled=!!(c&&c.active);
+ if(c&&c.active){let st=new Date(c.startedAt);cycleStatus.innerHTML=`<b>ACTIVE: ${c.date}</b><br>Started ${st.toLocaleString()}<br><span class="small">Crossing midnight will not reset your data.</span>`;startBtn.disabled=true;endBtn.disabled=false}else{cycleStatus.innerHTML="<b>No active tracking day.</b><br>Tap Start My Day when you wake up.";startBtn.disabled=false;endBtn.disabled=true}
+ dWeight.textContent=latest&&latest.weight?`${latest.weight} kg`:"—";dWaist.textContent=lw&&lw.waist?`${lw.waist} cm`:"—";dProtein.textContent=e&&e.proteinG?`${e.proteinG} g`:"—";dSteps.textContent=e&&e.steps?Number(e.steps).toLocaleString():"—";dSleep.textContent=e&&e.sleep?`${e.sleep} h`:"—";dWater.textContent=e&&e.water?`${e.water} gl`:"—";
+ goals.innerHTML=goal("Protein",e&&e.proteinG,s.goalProtein,"g")+goal("Steps",e&&e.steps,s.goalSteps)+goal("Water",e&&e.water,s.goalWater," gl")+goal("Sleep",e&&e.sleep,s.goalSleep,"h");
+ goalWeight.value=s.goalWeight;goalProtein.value=s.goalProtein;goalSteps.value=s.goalSteps;goalWater.value=s.goalWater;goalSleep.value=s.goalSleep;
+ rows.innerHTML="";[...a].reverse().slice(0,30).forEach(x=>{let tr=document.createElement("tr");tr.innerHTML=`<td>${x.date}</td><td>${x.weight||"—"}</td><td>${x.waist||"—"}</td><td>${x.proteinG||"—"}</td><td>${x.water||"—"}</td><td>${x.steps||"—"}</td><td>${x.sleep||"—"}</td><td><button class="danger" style="padding:5px" onclick="del('${x.date}')">×</button></td>`;rows.appendChild(tr)});
+ let set=new Set(a.map(x=>x.date)),x=new Date(localDate()+"T00:00:00"),n=0;for(let i=0;i<365;i++){let k=x.toISOString().slice(0,10);if(set.has(k)){n++;x.setDate(x.getDate()-1)}else{if(i===0){x.setDate(x.getDate()-1);continue}break}}streak.textContent=`${n}-day streak`;
+}
+function del(d){if(confirm("Delete this entry?")){put(entries().filter(x=>x.date!==d));render()}}
+function exportCSV(){let a=entries();if(!a.length){alert("No entries yet.");return}let h=["date","dayType","weight","waist","calories","proteinG","water","steps","sleep","workout","meals","notes"],q=v=>`"${String(v??"").replaceAll('"','""')}"`,csv=[h.join(","),...a.map(e=>h.map(k=>q(e[k])).join(","))].join("\n"),b=new Blob([csv],{type:"text/csv"}),u=URL.createObjectURL(b),z=document.createElement("a");z.href=u;z.download="diet-journey-backup.csv";z.click();URL.revokeObjectURL(u)}
+render();
+</script></body></html>
